@@ -1,0 +1,99 @@
+create database baithi01
+use baithi01
+
+
+create table HANGHANHKHONG
+(
+MAHANG char(2) not null,
+TENHANG nvarchar(30),
+NGTL smalldatetime,
+DUONGBAY int,
+constraint fk_hhk frimary key (MAHANG),
+)
+
+create table CHUYENBAY(
+MACB char(5) not null,
+MAHANG char(2),
+XUATPHAT nvarchar(10),
+DIEMDEN nvarchar(20),
+BATDAU smalldatetime,
+TGBAY  smallmoney,
+constraint fk_cb frimary key(MACB),
+)
+
+create table NHANVIEN
+(
+MANV char(4) not null,
+HOTEN nvarchar(20),
+GIOITINH char(3),
+NGSINH smalldatetime,
+NGVL smalldatetime,
+CHUYENMON nvarchar(10),
+constraint fk_nv frimary key(MANV),
+)
+
+create table PHANCONG(
+MACB char(5) not null,
+MANV char(4) not null,
+NHIEMVU nvarchar(20)
+constraint fk_pc frimary key(MACB,MANV),
+)
+
+-----------------
+
+alter table CHUYENBAY add constraint fr_cb foregin key  (MAHANG) references HANGHANGKHONG (MAHANG),
+alter table PHANCONG add constraint fr_pc1 foregin key (MACB) references CHUYENBAY(MACB),
+alter table PHANCONG add constraint fr_pc2 foregin key  (MANV) references NHANVIEN(MANV),
+
+
+
+set dateformat dmy;
+------------------------------------------------------
+insert into HANGHANGKHONG value('VN','Vietnam Airlines','15/01/1956',52)
+insert into HANGHANGKHONG value('VJ','Vietjet Air','25/12/2011',33)
+insert into HANGHANGKHONG value('BL','Jetstar Pacific Airlines','01/12/1990',13)
+
+insert into CHUYENBAY value('VN550','VN','TP. HCM','Singapore','13h15 20/12/2015',2),
+insert into CHUYENBAY value('VJ331','VJ',N'Đà Nẵng','Vinh','22h30 28/12/2015',1),
+insert into CHUYENBAY value('BL696','BL','TP. HCM',N'Đà Lạt','06h00 24/12/2015',0.5),
+
+insert into NHANVIEN value('NV01',N'Lâm Văn Bền','Nam','10/09/1978','05/06/2000',N'Phi công'),
+insert into NHANVIEN value('NV02',N'Dương Thị Lục',N'Nữ','22/03/1989','12/11/2013',N'Tiếp viên'),
+insert into NHANVIEN value('NV03',N'Hoàng Thanh Tùng','Nam','29/07/1983','11/04/2007',N'Tiếp viên'),
+
+insert into PHANCONG value('VN550','NV01',N'Cơ trưởng'),
+insert into PHANCONG value('VN550','NV02',N'Tiếp viên'),
+insert into PHANCONG value('BL696','NV03',N'Tiếp viên trưởng'),
+
+
+-------------------------------------------------
+alter table NHANVIEN add constraint check_chuyenmon check(CHUYENMON='Phi công' or CHUYENMON='Tiếp viên');
+
+-------------------------------------------------
+select *from NHANVIEN where MONTH(NGSINH)=7;
+-----------------------------------------------
+SELECT DISTINCT  MACB FROM CHUYENBAY,PHANCONG WHERE  CHUYENBAY.MACB = PHANCONG.MACB AND COUNT(MANV) IN (
+select TOP 1 COUNT(MANV) from CHUYENBAY A, PHANCONG  B where A.MACB=B.MACB GROUP BY A.MACB ORDER BY COUNT(DISTINCT MANV) DESC)
+GROUP BY MANV
+
+---------------------------------------------------------
+
+SELECT DISTINCT  MACB FROM CHUYENBAY,PHANCONG WHERE  CHUYENBAY.MACB = PHANCONG.MACB AND COUNT(MANV) IN (
+select TOP 1 COUNT(MANV) from CHUYENBAY A, PHANCONG  B where A.MACB=B.MACB GROUP BY A.MACB ORDER BY COUNT(DISTINCT MANV) )
+GROUP BY MANV
+
+----------------------------------------------------------
+SELECT COUNT(DISSTINCT A.MACB) FROM CHUYENBAY A ,HANGHANGKHONG B,PHANCONG C
+WHER A.MACB=C.MACB AND B.MAHANG=A.MAHANG AND XUATPHAT='Đà Nẵng' 
+GROUP BY A.MACB, A.MAHANG, MANV 
+HAVING COUNT(DISTINCT MANV)<2
+--------------------------------------------------------------
+SELECT *FROM NHANVIEN WHERE NOT EXISTS
+(SELECT *FROM CHUYENBAY WHERE NOT EXISTS (
+	SELECT *FROM PHANCONG WHER PHANCONG.MACB=CHUYENBAY.MACB AND PHANCONG.MANV=NHANVIEN.MANV
+))
+
+
+
+
+
